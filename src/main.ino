@@ -1,3 +1,4 @@
+//Arduino library
 #include <Arduino.h>
 
 //MAX31856 Library
@@ -30,6 +31,8 @@ bool DiscreteInputData[16];
 int HoldingRegister[16];
 bool CoilRegister[16];
 
+constexpr int REG_COUNT = 16;
+
 unsigned long lastmillis[16];
 
 unsigned long ts_Comm;
@@ -61,18 +64,27 @@ void setup(){
     Serial.begin(9600);
     // The media access control (ethernet hardware) address for the shield
     byte mac[] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
-    // The IP address for the shield
+    
     byte ip[] = { 192, 168, 0, 105 };
     //Config Modbus IP
     mb.config(mac, ip);
     //Add modbus register offset
-    for(int i = 0; i < 16; i++){
+    for(int i = 0; i < REG_COUNT; i++){
     mb.addIreg(i);
     mb.addIsts(i); 
     mb.addCoil(i);
     mb.addHreg(i);
     }
-    
+
+    // Initialize arrays to safe defaults
+    for (int i = 0; i < REG_COUNT; ++i) {
+        InputRegisterData[i] = 0;
+        HoldingRegister[i] = 0;
+        DiscreteInputData[i] = false;
+        CoilRegister[i] = false;
+        lastmillis[i] = 0;
+    }
+       
     //Initialize the MAX31856 with Type J And continuous reading
     if(TempSensor.init(MAX31856_TCTYPE_J,MAX31856_CONTINUOUS) == true){
 
@@ -80,9 +92,11 @@ void setup(){
 
     }else{
 
-        MaxGood = false;
+    MaxGood = false;
+    
     }
 
+    //Add alarms to manager
     almManager.addAlarm(&Dis_0);
     almManager.addAlarm(&Alm_0);
 
@@ -106,7 +120,10 @@ void loop(){
             if(millis() > lastmillis[0] + 150){
                 lastmillis[0] = millis();
                 DiscreteInputData[0] = !DiscreteInputData[0];
-            }
+    if (CoilRegister[0]) {
+        if (MaxGood) InputRegisterData[2] = TempSensor.readTCType();
+        else InputRegisterData[2] = 0;
+    }
 
         //MAX31856 card is initialized    
                 DiscreteInputData[1] = MaxGood;
@@ -116,9 +133,8 @@ void loop(){
     //Coils
         
         //Coils 0 : Get TC type
-          if (CoilRegister[0] == true) {InputRegisterData[2] = TempSensor.readTCType();}  
-            
-
+          if (CoilRegister[0]) {InputRegisterData[2] = TempSensor.readTCType();}  
+            else {InputRegisterData[2] = 0;}   
     
     if (millis() > ts_Serial + 1000) {
         ts_Serial = millis();
@@ -137,14 +153,14 @@ void loop(){
     }
 
 
-
+    //Alarm evaluation each 1 second
     if(millis() > ts_Alarm + 1000){
         ts_Alarm = millis();
         Dis_0.evaluate_Alm(CoilRegister[0]);
 
         Alm_0.evaluate_Alm(TempC);
 
-        if(CoilRegister[1] == 1){
+        if(CoilRegister[1]){
             
             Dis_0.acknowledge();
             Alm_0.acknowledge();
@@ -159,20 +175,24 @@ void loop(){
        ts_Comm = millis();
 
        //Setting raw value (0 to TYPE_THERMOCOUPLE)
-       for(int i = 0; i < 15; i++){
+       for(int i = 0; i < 16; i++){
         mb.Ireg(i, InputRegisterData[i]);
         mb.Ists(i,DiscreteInputData[i]);       
         CoilRegister[i] = mb.Coil(i);
         HoldingRegister[i] = mb.Hreg(i);
         
         //Mb move the value to registers
-        mb.task();
+        
        }
-       
+       //Modbus task
+       mb.task();
       
    }
 
 }
+  
+}
+
 
 
 
