@@ -120,7 +120,7 @@ void loop(){
             
 
     
-    /*if (millis() > ts_Serial + 1000) {
+    if (millis() > ts_Serial + 1000) {
         ts_Serial = millis();
         Serial.print("HR:");
         for(int i= 0;i < 16;i++){            
@@ -134,7 +134,7 @@ void loop(){
             Serial.print(",");
         }
         Serial.println();
-    }*/
+    }
 
 
 
@@ -150,8 +150,8 @@ void loop(){
             Alm_0.acknowledge();
         }
         
-        Serial.println(String(Alm_0.getState()));
-        Serial.println(TempC);
+        //Serial.println(String(Alm_0.getState()));
+        //Serial.println(TempC);
     }
     
     //Read each 750 ms
