@@ -132,15 +132,8 @@ void loop() {
         DiscreteInputData[1] = MaxGood;
     }
 
-    // Coils: Coil 0 used to request TC type (mirrored in InputRegisterData[2])
-    if (CoilRegister[0]) {
-        InputRegisterData[2] = TempSensor.readTCType();
-    } else {
-        InputRegisterData[2] = 0;
-    }
-
     // Periodic serial debug output (~1s)
-    if (millis() > ts_Serial + 1000) {
+   /* if (millis() > ts_Serial + 1000) {
         ts_Serial = millis();
 
         Serial.print("HR:");
@@ -157,6 +150,7 @@ void loop() {
         }
         Serial.println();
     }
+*/
 
     // Alarm evaluation every 1 second
     if (millis() > ts_Alarm + 1000) {
@@ -164,6 +158,12 @@ void loop() {
 
         Dis_0.evaluate_Alm(CoilRegister[0]);
         Alm_0.evaluate_Alm(TempC);
+
+        if(Alm_0.getState() == Active){
+            DiscreteInputData[3] = true;
+        }else{
+            DiscreteInputData[3] = false;
+        }
 
         // If coil 1 is set, acknowledge alarms
         if (CoilRegister[1]) {
