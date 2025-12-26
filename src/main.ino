@@ -160,9 +160,9 @@ void loop() {
         Alm_0.evaluate_Alm(TempC);
 
         if(Alm_0.getState() == Active){
-            DiscreteInputData[3] = true;
+            DiscreteInputData[2] = true;
         }else{
-            DiscreteInputData[3] = false;
+            DiscreteInputData[2] = false;
         }
 
         // If coil 1 is set, acknowledge alarms
