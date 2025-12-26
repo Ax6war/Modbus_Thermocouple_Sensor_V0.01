@@ -5,9 +5,9 @@
 #include <TemperatureSensor.h>
 
 //ALarm management library
-#include <Alarm_Manager/AlarmManager.h>
-#include <Alarm_Manager/DiscreteAlarm.h>
-#include <Alarm_Manager/AnalogAlarm.h>
+#include <AlarmManager.h>
+#include <DiscreteAlarm.h>
+#include <AnalogAlarm.h>
 
 //ModbusIP server With ENC28J60
 #include <EtherCard.h>
