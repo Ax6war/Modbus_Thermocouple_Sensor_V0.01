@@ -11,7 +11,7 @@ private:
 public:
 
 
-    AnalogAlarm(AckMode ack, float threshold);
+    AnalogAlarm(AckMode ack, float threshold, Analog_Mode mode);
 
     void evaluate_Alm(float value);
 

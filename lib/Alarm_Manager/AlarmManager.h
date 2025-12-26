@@ -1,3 +1,8 @@
+/*
+  AlarmManager.h
+  Purpose: Declaration of the AlarmManager which owns/manages alarms.
+*/
+
 #ifndef ALARMMANAGER_H
 #define ALARMMANAGER_H
 

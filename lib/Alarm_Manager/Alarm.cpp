@@ -1,3 +1,8 @@
+/*
+  Alarm.cpp
+  Purpose: Implementation of base Alarm behavior.
+*/
+
 #include "Alarm.h"
 
 Alarm::Alarm(AckMode ack) : state(Not_Active),ackmode(ack){}

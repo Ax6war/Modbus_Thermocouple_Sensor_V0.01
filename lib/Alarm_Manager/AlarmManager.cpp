@@ -1,3 +1,8 @@
+/*
+  AlarmManager.cpp
+  Purpose: Implements AlarmManager operations (add/remove/evaluate/update).
+*/
+
 #include "AlarmManager.h"
 
 

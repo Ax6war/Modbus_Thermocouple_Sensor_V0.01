@@ -1,3 +1,8 @@
+/*
+  DiscreteAlarm.h
+  Purpose: Declaration for discrete (digital) alarms.
+*/
+
 #ifndef DISCRETEALARM_H
 #define DISCRETEALARM_H
 
