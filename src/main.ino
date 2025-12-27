@@ -10,6 +10,7 @@
 #include <AlarmManager.h>
 #include <DiscreteAlarm.h>
 #include <AnalogAlarm.h>
+#include <DeviationAlarm.h>
 
 // ModbusIP server with ENC28J60
 #include <EtherCard.h>
@@ -47,8 +48,8 @@ float Temp_Reading;
 bool MaxGood = false;
 
 // Alarm declarations
-DiscreteAlarm Dis_0(Manual, true);
 AnalogAlarm Alm_0(Manual, 30.0, HI);
+DeviationAlarm Dev_0(Manual, 30.0, 27.0, true);
 
 // MAX31856 sensor object (CS_Pin, MOSI_Pin, MISO_Pin, CLK_Pin)
 TemperatureSensor TempSensor(CS_PIN_MAX31856, MAX_MOSI_PIN, MAX_MISO_PIN, MAX_CLK_PIN);
@@ -98,8 +99,8 @@ void setup() {
     }
 
     // Add alarms to manager
-    almManager.addAlarm(&Dis_0);
     almManager.addAlarm(&Alm_0);
+    almManager.addAlarm(&Dev_0);
 
     // Initialize timestamps
     ts_Comm = millis();
@@ -118,7 +119,7 @@ void loop() {
 
     // Discrete input management
     // Discrete input 0: life (heartbeat) bit toggled ~150 ms
-    if (millis() > lastmillis[0] + 250) {
+    if (millis() > lastmillis[0] + 750) {
         lastmillis[0] = millis();
         DiscreteInputData[0] = !DiscreteInputData[0];
 
@@ -155,25 +156,23 @@ void loop() {
     // Alarm evaluation every 1 second
     if (millis() > ts_Alarm + 1000) {
         ts_Alarm = millis();
-
-        Dis_0.evaluate_Alm(CoilRegister[0]);
-        Alm_0.evaluate_Alm(TempC);
-
-        if(Alm_0.getState() == Active){
+        Dev_0.evaluate_Alm(TempC);
+        Serial.print("Dev Alarm State: ");
+        Serial.println(Dev_0.getState());
+        if(Dev_0.getState() == Active){
             DiscreteInputData[2] = true;
-        }else{
-            DiscreteInputData[2] = false;
-        }
+    }
+}else{
+    DiscreteInputData[2] = false;
+}
 
-        // If coil 1 is set, acknowledge alarms
-        if (CoilRegister[1]) {
-            Dis_0.acknowledge();
-            Alm_0.acknowledge();
-        }
+    if(CoilRegister[1]){
+        Dev_0.acknowledge();
     }
 
+
     // Communication / Modbus task handling (~250 ms)
-    if (millis() > ts_Comm + 250) {
+    if (millis() > ts_Comm + 500) {
         ts_Comm = millis();
 
         // Update Modbus registers and read coil/holding values

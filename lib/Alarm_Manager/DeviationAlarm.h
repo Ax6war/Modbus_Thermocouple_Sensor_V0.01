@@ -12,7 +12,8 @@ private:
     float setpoint_High;
     float setpoint_Low;
     float threshold;
-    bool AtSetpoint;
+    bool AtSetpoint = false;
+    bool isAtSetpoint;
     Analog_Mode mode;
 };
 
