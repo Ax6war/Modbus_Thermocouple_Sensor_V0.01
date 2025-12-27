@@ -182,10 +182,11 @@ void loop() {
             mb.Ists(i, DiscreteInputData[i]);
             CoilRegister[i] = mb.Coil(i);
             HoldingRegister[i] = mb.Hreg(i);
+            mb.task();
         }
 
         // Let Modbus stack run its tasks
-        mb.task();
+        
     }
 }
 

@@ -20,7 +20,7 @@ class TemperatureSensor{
             int16_t readTemperature();
             int16_t readCJTtemperature();
             int readTCType();
-
+            
 
 
 };
