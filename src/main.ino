@@ -34,6 +34,13 @@ bool DiscreteInputData[16];
 int HoldingRegister[16];
 bool CoilRegister[16];
 
+int lastAlarmType = -1;
+int Alarm_0_Active_Type = -1;
+bool lastIsAtSetpoint = false;
+float lastThreshReg = -1;
+float lastSetHighReg = -1;
+float lastSetLowReg = -1;
+
 constexpr int REG_COUNT = 16;
 
 // Last toggles / timestamps
@@ -49,7 +56,7 @@ bool MaxGood = false;
 
 // Alarm declarations
 AnalogAlarm Alm_0(Manual, 30.0, HI);
-DeviationAlarm Dev_0(Manual, 30.0, 27.0, true);
+DeviationAlarm Dev_0(Manual, 30.0, 27.0, false);
 
 // MAX31856 sensor object (CS_Pin, MOSI_Pin, MISO_Pin, CLK_Pin)
 TemperatureSensor TempSensor(CS_PIN_MAX31856, MAX_MOSI_PIN, MAX_MISO_PIN, MAX_CLK_PIN);
@@ -109,6 +116,9 @@ void setup() {
 }
 
 void loop() {
+
+    //Input register management
+
     // Read thermocouple temperature (stored as integer * 100)
     InputRegisterData[0] = TempSensor.readTemperature();
 
@@ -118,6 +128,7 @@ void loop() {
     float TempC = InputRegisterData[0] / 100.0;
 
     // Discrete input management
+
     // Discrete input 0: life (heartbeat) bit toggled ~150 ms
     if (millis() > lastmillis[0] + 750) {
         lastmillis[0] = millis();
@@ -132,6 +143,70 @@ void loop() {
         // Indicate whether MAX31856 card is initialized
         DiscreteInputData[1] = MaxGood;
     }
+
+    // Holding register management
+
+    int Alarm_0_Type = HoldingRegister[0];
+    float Alarm_0_Threshold = HoldingRegister[1];
+    float Alarm_0_DevHigh = HoldingRegister[2];
+    float Alarm_0_DevLow = HoldingRegister[3];
+    bool Alarm_0_IsAtSetpoint = CoilRegister[2];
+    bool Alarm_0_Enable = CoilRegister[0];
+    bool Alarm_0_Ack = CoilRegister[1];
+
+    if(Alarm_0_Type != lastAlarmType) {
+        lastAlarmType = Alarm_0_Type;   
+        Alarm_0_Active_Type = Alarm_0_Type;
+    }
+
+    if(Alarm_0_Enable) {
+        switch (Alarm_0_Active_Type) {
+            case 0: // Analog Alarm
+                if(Alarm_0_Threshold != lastThreshReg) {
+                    lastThreshReg = Alarm_0_Threshold;
+                    Alm_0.changeThreshold(Alarm_0_Threshold/100.0);
+                }
+                
+
+                Alm_0.evaluate_Alm(TempC);
+
+                InputRegisterData[3] = Alm_0.getState(); // Clear IsAtSetpoint coil
+                break;
+            case 1: // Deviation Alarm
+                if(Alarm_0_DevHigh != lastSetHighReg || Alarm_0_DevLow != lastSetLowReg) {
+                    lastSetHighReg = Alarm_0_DevHigh;
+                    lastSetLowReg = Alarm_0_DevLow;
+                    Dev_0.changeSetpoint(Alarm_0_DevHigh/100.0, Alarm_0_DevLow/100.0);
+                }
+                
+
+                if(Alarm_0_IsAtSetpoint != lastIsAtSetpoint) {
+                    lastIsAtSetpoint = Alarm_0_IsAtSetpoint;
+                    Dev_0.changeIsAtSetpoint(Alarm_0_IsAtSetpoint);
+                }
+
+                
+
+                
+                Dev_0.evaluate_Alm(TempC);
+                    // If deviation alarm cleared, switch back to analog alarm
+                    InputRegisterData[3] = Dev_0.getState(); // Clear IsAtSetpoint coil
+                
+                break;
+            default:
+                // Invalid type; do nothing
+                break;
+        }
+    }else{
+        // Alarm disabled; ensure state is Not_Active
+        InputRegisterData[3] = 3;
+    }       
+
+    if(Alarm_0_Ack) {
+        Alm_0.acknowledge();
+        Dev_0.acknowledge();
+    }
+    
 
     // Periodic serial debug output (~1s)
    /* if (millis() > ts_Serial + 1000) {
@@ -152,24 +227,6 @@ void loop() {
         Serial.println();
     }
 */
-
-    // Alarm evaluation every 1 second
-    if (millis() > ts_Alarm + 1000) {
-        ts_Alarm = millis();
-        Dev_0.evaluate_Alm(TempC);
-        Serial.print("Dev Alarm State: ");
-        Serial.println(Dev_0.getState());
-        if(Dev_0.getState() == Active){
-            DiscreteInputData[2] = true;
-    }
-}else{
-    DiscreteInputData[2] = false;
-}
-
-    if(CoilRegister[1]){
-        Dev_0.acknowledge();
-    }
-
 
     // Communication / Modbus task handling (~250 ms)
     if (millis() > ts_Comm + 500) {

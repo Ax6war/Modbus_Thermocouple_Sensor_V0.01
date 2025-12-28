@@ -55,3 +55,17 @@ if (ackmode == Auto) {
     }
     }
 }
+
+void DeviationAlarm::changeSetpoint(float newSetpoint_High, float newSetpoint_Low){
+    setpoint_High = newSetpoint_High;
+    setpoint_Low = newSetpoint_Low;
+}
+
+void DeviationAlarm::changeAckMode(AckMode newAckMode){
+    ackmode = newAckMode;
+}
+
+void DeviationAlarm::changeIsAtSetpoint(bool newIsAtSetpoint){
+    isAtSetpoint = newIsAtSetpoint;
+    AtSetpoint = false;
+}

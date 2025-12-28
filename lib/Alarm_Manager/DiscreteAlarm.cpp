@@ -24,11 +24,8 @@ void DiscreteAlarm::evaluate_Alm(bool value){
         }
     }
          
+}
 
-
-
-
-
-
-
+void DiscreteAlarm::changeAlarmValue(bool newAlarmValue){
+    Alarm_value = newAlarmValue;
 }

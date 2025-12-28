@@ -13,6 +13,8 @@ public:
 
     AnalogAlarm(AckMode ack, float threshold, Analog_Mode mode);
 
+    void changeThreshold(float newThreshold);
+
     void evaluate_Alm(float value);
 
 

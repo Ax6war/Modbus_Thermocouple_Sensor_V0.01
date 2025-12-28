@@ -61,3 +61,7 @@ void AnalogAlarm::evaluate_Alm(float value)
         }
       }
     }
+
+void AnalogAlarm::changeThreshold(float newThreshold){
+    Alarm_threshold = newThreshold;
+}

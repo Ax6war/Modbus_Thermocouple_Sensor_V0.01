@@ -7,7 +7,10 @@ class DeviationAlarm : public Alarm {
 public:
     DeviationAlarm(AckMode ack, float setpoint_High, float setpoint_Low, bool isAtSetpoint);
     void evaluate_Alm(float value);
-
+    void changeSetpoint(float newSetpoint_High, float newSetpoint_Low);
+    void changeAckMode(AckMode newAckMode);
+    void changeIsAtSetpoint(bool newIsAtSetpoint);
+    
 private:
     float setpoint_High;
     float setpoint_Low;

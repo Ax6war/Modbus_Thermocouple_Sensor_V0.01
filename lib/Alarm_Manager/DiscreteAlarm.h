@@ -17,6 +17,9 @@ public:
     DiscreteAlarm(AckMode ack,bool AlarmOn);
 
     void evaluate_Alm(bool value);
+
+    void changeAlarmValue(bool newAlarmValue);
+    
     
 };
 
