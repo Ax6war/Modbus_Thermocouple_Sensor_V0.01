@@ -8,9 +8,6 @@
 
 // Alarm management library
 #include <AlarmManager.h>
-#include <DiscreteAlarm.h>
-#include <AnalogAlarm.h>
-#include <DeviationAlarm.h>
 
 // ModbusIP server with ENC28J60
 #include <EtherCard.h>
@@ -55,8 +52,8 @@ float Temp_Reading;
 bool MaxGood = false;
 
 // Alarm declarations
-AnalogAlarm Alm_0(Manual, 30.0, HI);
-DeviationAlarm Dev_0(Manual, 30.0, 27.0, false);
+Alarm alarm_0(ANALOG, Auto);
+Alarm alarm_1(DEVIATION, Manual); 
 
 // MAX31856 sensor object (CS_Pin, MOSI_Pin, MISO_Pin, CLK_Pin)
 TemperatureSensor TempSensor(CS_PIN_MAX31856, MAX_MOSI_PIN, MAX_MISO_PIN, MAX_CLK_PIN);
@@ -106,9 +103,14 @@ void setup() {
     }
 
     // Add alarms to manager
-    almManager.addAlarm(&Alm_0);
-    almManager.addAlarm(&Dev_0);
+    alarm_0.setType(ANALOG);
+    alarm_0.setMode(HI);
+    alarm_0.changeThreshold(32.00f); // Example threshold
+    almManager.addAlarm(&alarm_0);
 
+    alarm_1.setType(DEVIATION);
+    alarm_1.changeMinMax(30, 27); // Example high/low setpoints
+    almManager.addAlarm(&alarm_1);
     // Initialize timestamps
     ts_Comm = millis();
     ts_Serial = millis();
@@ -154,79 +156,51 @@ void loop() {
     bool Alarm_0_Enable = CoilRegister[0];
     bool Alarm_0_Ack = CoilRegister[1];
 
-    if(Alarm_0_Type != lastAlarmType) {
-        lastAlarmType = Alarm_0_Type;   
-        Alarm_0_Active_Type = Alarm_0_Type;
-    }
 
-    if(Alarm_0_Enable) {
-        switch (Alarm_0_Active_Type) {
-            case 0: // Analog Alarm
-                if(Alarm_0_Threshold != lastThreshReg) {
-                    lastThreshReg = Alarm_0_Threshold;
-                    Alm_0.changeThreshold(Alarm_0_Threshold/100.0);
-                }
+
+    
+               // if(Alarm_0_Threshold != lastThreshReg) {
+                 //   lastThreshReg = Alarm_0_Threshold;
+                //    alarm_0.changeThreshold(Alarm_0_Threshold/100.0);
+               // }
                 
 
-                Alm_0.evaluate_Alm(TempC);
+                alarm_0.evaluate_Alm(TempC);
+                alarm_1.evaluate_Alm(TempC); // Keep deviation alarm updated too
 
-                InputRegisterData[3] = Alm_0.getState(); // Clear IsAtSetpoint coil
-                break;
-            case 1: // Deviation Alarm
+                InputRegisterData[3] = alarm_0.getState(); // Clear IsAtSetpoint coil
+                InputRegisterData[4] = alarm_1.getState();
+          
                 if(Alarm_0_DevHigh != lastSetHighReg || Alarm_0_DevLow != lastSetLowReg) {
                     lastSetHighReg = Alarm_0_DevHigh;
                     lastSetLowReg = Alarm_0_DevLow;
-                    Dev_0.changeSetpoint(Alarm_0_DevHigh/100.0, Alarm_0_DevLow/100.0);
+                    alarm_1.changeMinMax(Alarm_0_DevHigh/100.0, Alarm_0_DevLow/100.0);
                 }
                 
 
-                if(Alarm_0_IsAtSetpoint != lastIsAtSetpoint) {
-                    lastIsAtSetpoint = Alarm_0_IsAtSetpoint;
-                    Dev_0.changeIsAtSetpoint(Alarm_0_IsAtSetpoint);
-                }
+                
 
                 
 
                 
-                Dev_0.evaluate_Alm(TempC);
-                    // If deviation alarm cleared, switch back to analog alarm
-                    InputRegisterData[3] = Dev_0.getState(); // Clear IsAtSetpoint coil
                 
-                break;
-            default:
-                // Invalid type; do nothing
-                break;
-        }
-    }else{
-        // Alarm disabled; ensure state is Not_Active
-        InputRegisterData[3] = 3;
-    }       
+               
+                
+            
+    
 
     if(Alarm_0_Ack) {
-        Alm_0.acknowledge();
-        Dev_0.acknowledge();
+        alarm_0.acknowledge();
+        alarm_1.acknowledge();
     }
     
 
     // Periodic serial debug output (~1s)
-   /* if (millis() > ts_Serial + 1000) {
-        ts_Serial = millis();
-
-        Serial.print("HR:");
-        for (int i = 0; i < 16; i++) {
-            Serial.print(HoldingRegister[i]);
-            Serial.print(",");
-        }
-        Serial.println();
-
-        Serial.print("Coils:");
-        for (int i = 0; i < 16; i++) {
-            Serial.print(CoilRegister[i] ? 1 : 0);
-            Serial.print(",");
-        }
-        Serial.println();
+    if (millis() > ts_Serial + 1000) {
+       ts_Serial = millis();
+        Serial.println(String(alarm_0.getType()));
     }
-*/
+
 
     // Communication / Modbus task handling (~250 ms)
     if (millis() > ts_Comm + 500) {

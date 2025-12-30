@@ -8,8 +8,8 @@
 
 // Enumeration for alarm states
 enum AlarmState {
-    Active,
     Not_Active,
+    Active,
     Acknowledge
 };
 
@@ -23,6 +23,12 @@ enum AckMode{
 enum Analog_Mode{
     HI,
     LO,
+};
+
+enum AlarmType{
+    ANALOG,
+    DIGITAL,
+    DEVIATION
 };
 
 #endif
